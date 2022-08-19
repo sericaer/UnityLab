@@ -34,6 +34,13 @@ namespace Common.Math.TileMap
             return Array.IndexOf(directs, (axialTarget.q - axialOrigin.q, axialTarget.r - axialOrigin.r));
         }
 
+        internal static (int q, int r) ScaleOffset((int x, int y) offset, int v)
+        {
+            var axial = ToAxial(offset);
+
+            return ToOffset((axial.q * v, axial.r * v));
+        }
+
         internal static (int x, int y) ToOffset((int q, int r) axial)
         {
             int col = axial.q;
@@ -50,6 +57,11 @@ namespace Common.Math.TileMap
             int r = offset.row - (int)((offset.col + def * (offset.col & 1)) / 2);
 
             return (q, r);
+        }
+
+        internal static (int q, int r) ScaleAxial((int q, int r) axial, int v)
+        {
+            return (axial.q * v, axial.r * v);
         }
     }
 
