@@ -7,7 +7,8 @@ using UnityEngine.Tilemaps;
 
 public class HexBlockMapDrawEdge : MonoBehaviour
 {
-    public Tilemap tilemap;
+    public Tilemap blockMap;
+    public Tilemap edgeMap;
     public Sprite sprite;
 
     public Block.BuilderGroup builderGroup;
@@ -53,13 +54,44 @@ public class HexBlockMapDrawEdge : MonoBehaviour
 
         for (int i = 0; i < blocks.Length; i++)
         {
-            foreach (var elem in blocks[i].edges)
+            foreach (var elem in blocks[i].elements)
             {
                 var pos = new Vector3Int(elem.x, elem.y, 0);
-                SetTileColor(pos, colors.ElementAt(i));
+                blockMap.SetTileColor(pos, tile, colors.ElementAt(i));
             }
         }
-        
+
+        var dict = new Dictionary<(int x, int y), Block>();
+        foreach(var block in blocks)
+        {
+            foreach(var edge in block.edges.Select(e=>Hexagon.ScaleOffset(e, 2)))
+            {
+                dict.Add(edge, block);
+            }
+        }
+
+        var edgeCenters = blocks.SelectMany(x => x.edges)
+            .Select(x => Hexagon.ScaleOffset(x, 2))
+            .ToHashSet();
+
+        foreach (var elem in edgeCenters)
+        {
+            var edges = Hexagon.GetNeighbors(elem);
+            edges = edges.Where(e =>
+            {
+                var neighbors = Hexagon.GetNeighbors(e)
+                    .Where(n => edgeCenters.Contains(n));
+
+                var nCount = neighbors.Select(n => dict[n]).Distinct().Count();
+                return nCount > 1;
+            });
+
+            foreach(var edge in edges)
+            {
+                var pos = new Vector3Int(edge.x, edge.y, 0);
+                edgeMap.SetTileColor(pos, tile, Color.white);
+            }
+        }
     }
 
     // Update is called once per frame
@@ -68,27 +100,27 @@ public class HexBlockMapDrawEdge : MonoBehaviour
 
     }
 
-    IEnumerator OnTimer()
-    {
-        yield return new WaitForSeconds(1);
+    //IEnumerator OnTimer()
+    //{
+    //    yield return new WaitForSeconds(1);
 
-        var stepResults = builderGroup.BuildInStep();
-        for(int i=0; i< stepResults.Length; i++)
-        {
-            foreach(var elem in stepResults[i].elements)
-            {
-                var pos = new Vector3Int(elem.x, elem.y, 0);
-                SetTileColor(pos, colors.ElementAt(i));
-            }
-        }
+    //    var stepResults = builderGroup.BuildInStep();
+    //    for(int i=0; i< stepResults.Length; i++)
+    //    {
+    //        foreach(var elem in stepResults[i].elements)
+    //        {
+    //            var pos = new Vector3Int(elem.x, elem.y, 0);
+    //            SetTileColor(pos, colors.ElementAt(i));
+    //        }
+    //    }
 
-        StartCoroutine(OnTimer());
-    }
+    //    StartCoroutine(OnTimer());
+    //}
 
-    private void SetTileColor(Vector3Int pos, Color color)
-    {
-        tilemap.SetTile(pos, tile);
-        tilemap.SetTileFlags(pos, TileFlags.None);
-        tilemap.SetColor(pos, color);
-    }
+    //private void SetTileColor(Vector3Int pos, Color color)
+    //{
+    //    blockMap.SetTile(pos, tile);
+    //    blockMap.SetTileFlags(pos, TileFlags.None);
+    //    blockMap.SetColor(pos, color);
+    //}
 }

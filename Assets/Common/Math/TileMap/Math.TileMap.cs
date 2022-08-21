@@ -31,10 +31,11 @@ namespace Common.Math.TileMap
             var axialTarget = ToAxial(target);
             var axialOrigin = ToAxial(origin);
 
-            return Array.IndexOf(directs, (axialTarget.q - axialOrigin.q, axialTarget.r - axialOrigin.r));
+            var direct = (axialTarget.q - axialOrigin.q, axialTarget.r - axialOrigin.r);
+            return Array.IndexOf(directs, direct);
         }
 
-        internal static (int q, int r) ScaleOffset((int x, int y) offset, int v)
+        internal static (int x, int y) ScaleOffset((int x, int y) offset, int v)
         {
             var axial = ToAxial(offset);
 
