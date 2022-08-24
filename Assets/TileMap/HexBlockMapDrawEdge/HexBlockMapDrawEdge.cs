@@ -40,7 +40,7 @@ public class HexBlockMapDrawEdge : MonoBehaviour
         //    colors.Add(new Color(Random.Range(0f, 1f), Random.Range(0f, 1f), Random.Range(0f, 1f)));
         //}
 
-        builderGroup = new Block.BuilderGroup(50);
+        builderGroup = new Block.BuilderGroup(100);
 
         //StartCoroutine(OnTimer());
 
@@ -66,6 +66,10 @@ public class HexBlockMapDrawEdge : MonoBehaviour
         {
             foreach(var edge in block.edges.Select(e=>Hexagon.ScaleOffset(e, 2)))
             {
+                if(dict.ContainsKey(edge))
+                {
+                    continue;
+                }
                 dict.Add(edge, block);
             }
         }
