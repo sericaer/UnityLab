@@ -79,6 +79,25 @@ namespace Common.Math.TileMap
         {
             return (axial.q * v, axial.r * v);
         }
+
+        internal static int GetDistance((int x, int y) target, (int x, int y) origin)
+        {
+            var axialP1 = ToAxial(target);
+            var axialP2 = ToAxial(origin);
+
+            var sub = (axialP1.q - axialP2.q, axialP1.r-axialP2.r);
+            return Length(sub);
+        }
+
+        private static int Length((int q, int r) axial)
+        {
+            return (int)((System.Math.Abs(axial.q) + System.Math.Abs(axial.r) + System.Math.Abs(CalcSValue(axial))) / 2);
+        }
+
+        private static int CalcSValue((int q, int r) axial)
+        {
+            return 0 - (axial.q + axial.r);
+        }
     }
 
     public class Rectangle
@@ -149,10 +168,10 @@ namespace Common.Math.TileMap
 
 
                 builders = new List<Builder>();
-                for (int i = (size * -1) + step; i < size; i += step)
+                for (int i = step; i < size; i += step)
                 {
                     var directRandoms = new int[] { 1, 2, 3, 8, 9, 10 };
-                    for (int j = (size * -1) + step; j < size; j += step)
+                    for (int j = step; j < size; j += step)
                     {
                         var startPos = (i + UnityEngine.Random.Range(step / -2, step / 2), j + UnityEngine.Random.Range(step / -2, step / 2));
                         builders.Add(new Builder(size, startPos, directRandoms.OrderBy(x=>Guid.NewGuid()).ToArray()));
@@ -221,7 +240,7 @@ namespace Common.Math.TileMap
 
                 var validNeighbors = edges.SelectMany(x => Hexagon.GetNeighbors(x))
                     .Where(n => !isExist(n))
-                    .Where(n => (int)System.Math.Abs(n.x) < size && (int)System.Math.Abs(n.y) < size)
+                    .Where(n => n.x < size && n.x >= 0 && n.y < size && n.y >= 0)
                     .ToHashSet();
 
                 isFinish = validNeighbors.Count() == 0;

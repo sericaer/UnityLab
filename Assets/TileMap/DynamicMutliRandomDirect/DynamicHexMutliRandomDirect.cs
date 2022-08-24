@@ -39,7 +39,7 @@ public class DynamicHexMutliRandomDirect : MonoBehaviour
         //    colors.Add(new Color(Random.Range(0f, 1f), Random.Range(0f, 1f), Random.Range(0f, 1f)));
         //}
 
-        builderGroup = new Block.BuilderGroup(50);
+        builderGroup = new Block.BuilderGroup(100);
 
         //StartCoroutine(OnTimer());
 
@@ -53,7 +53,7 @@ public class DynamicHexMutliRandomDirect : MonoBehaviour
 
         for (int i = 0; i < blocks.Length; i++)
         {
-            foreach (var elem in blocks[i].edges)
+            foreach (var elem in blocks[i].elements)
             {
                 var pos = new Vector3Int(elem.x, elem.y, 0);
                 SetTileColor(pos, colors.ElementAt(i));
