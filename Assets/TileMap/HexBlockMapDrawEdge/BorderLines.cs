@@ -12,11 +12,42 @@ public class BorderLines : MonoBehaviour
     {
         defalutLine.positionCount = 0;
 
-        defalutLine.positionCount++;
-        defalutLine.SetPosition(defalutLine.positionCount - 1, lines.First().p1);
+        var lineList = new List<List<Vector3>>();
 
-        defalutLine.positionCount++;
-        defalutLine.SetPosition(defalutLine.positionCount - 1, lines.Last().p2);
+        var rawList = new LinkedList<(Vector3 p1, Vector3 p2)>(lines);
+        while (rawList.Count() != 0)
+        {
+            var first = rawList.First;
+            rawList.RemoveFirst();
+
+            var line = new List<Vector3>() { first.Value.p1, first.Value.p2 };
+            lineList.Add(line);
+
+            var currNode = rawList.First;
+            while (currNode!= null)
+            {
+                var nextNode = currNode.Next;
+                if (currNode.Value.p1 == line.Last())
+                {
+                    line.Add(currNode.Value.p2);
+                    rawList.Remove(currNode);
+                }
+                else if (currNode.Value.p2 == line.Last())
+                {
+                    line.Add(currNode.Value.p1);
+                    rawList.Remove(currNode);
+                }
+                currNode = nextNode;
+            }
+        }
+
+        var test = lineList.First();
+
+        foreach(var p in test)
+        {
+            defalutLine.positionCount++;
+            defalutLine.SetPosition(defalutLine.positionCount - 1, p);
+        }
     }
 
     // Start is called before the first frame update
