@@ -7,66 +7,59 @@ using UnityEngine.Tilemaps;
 
 public class HexBlockMapDrawEdge : MonoBehaviour
 {
-    public Tilemap blockMap;
-    public Tilemap edgeMap;
-    public Sprite sprite;
+    public BlockMap blockMap;
+    public EdgeMap edgeMap;
+    public BorderLines borderLines;
 
-    public Block.BuilderGroup builderGroup;
-
-    public HashSet<Color> colors;
-
-    public Tile tile
-    {
-        get
-        {
-            if (_tile == null)
-            {
-                _tile = ScriptableObject.CreateInstance<Tile>();
-                _tile.sprite = sprite;
-            }
-
-            return _tile;
-        }
-    }
-
-    private Tile _tile;
+    public Grid mapGrid;
 
     // Start is called before the first frame update
     void Start()
     {
-        //colors = new HashSet<Color>();
-        //while (colors.Count < 100)
-        //{
-        //    colors.Add(new Color(Random.Range(0f, 1f), Random.Range(0f, 1f), Random.Range(0f, 1f)));
-        //}
 
-        builderGroup = new Block.BuilderGroup(100);
-
-        //StartCoroutine(OnTimer());
-
+        var builderGroup = new Block.BuilderGroup(100);
         var blocks = builderGroup.Build();
 
-        colors = new HashSet<Color>();
-        while (colors.Count < blocks.Length)
-        {
-            colors.Add(new Color(Random.Range(0f, 1f), Random.Range(0f, 1f), Random.Range(0f, 1f)));
-        }
+        blockMap.SetBlocks(blocks);
+        
+        var edges = GenerateEdges(blocks);
+        edgeMap.SetEdges(edges);
 
-        for (int i = 0; i < blocks.Length; i++)
+        var lines = GenerateBorderLines(edges);
+        borderLines.SetLines(lines);
+    }
+
+    private IEnumerable<(Vector3 p1, Vector3 p2)> GenerateBorderLines(IEnumerable<(int x, int y)> edges)
+    {
+        var cellLines = new List<((int x, int y) p1, (int x, int y) p2)>();
+
+        var edgeList = new LinkedList<(int x, int y)>(edges);
+        while(edgeList.Count() != 0)
         {
-            foreach (var elem in blocks[i].elements)
+            var curr = edgeList.First;
+            var lines = Hexagon.GetNeighbors(curr.Value).Where(n => edges.Contains(n)).Select(n => (p1: curr.Value, p2: n));
+
+            edgeList.RemoveFirst();
+            foreach(var line in lines)
             {
-                var pos = new Vector3Int(elem.x, elem.y, 0);
-                blockMap.SetTileColor(pos, tile, colors.ElementAt(i));
+                edgeList.Remove(line.p2);
             }
+            cellLines.AddRange(lines);
         }
 
+        return cellLines.Select(line => (
+            mapGrid.CellToWorld(new Vector3Int(line.p1.x, line.p1.y)) / 2,
+            mapGrid.CellToWorld(new Vector3Int(line.p2.x, line.p2.y)) / 2));
+    }
+
+    private IEnumerable<(int x, int y)> GenerateEdges(Block[] blocks)
+    {
         var dict = new Dictionary<(int x, int y), Block>();
-        foreach(var block in blocks)
+        foreach (var block in blocks)
         {
-            foreach(var edge in block.edges.Select(e=>Hexagon.ScaleOffset(e, 2)))
+            foreach (var edge in block.edges.Select(e => Hexagon.ScaleOffset(e, 2)))
             {
-                if(dict.ContainsKey(edge))
+                if (dict.ContainsKey(edge))
                 {
                     continue;
                 }
@@ -74,6 +67,7 @@ public class HexBlockMapDrawEdge : MonoBehaviour
             }
         }
 
+        var rlst = new List<(int x, int y)>();
         var edgeCenters = blocks.SelectMany(x => x.edges)
             .Select(x => Hexagon.ScaleOffset(x, 2))
             .ToHashSet();
@@ -89,42 +83,9 @@ public class HexBlockMapDrawEdge : MonoBehaviour
                 var nCount = neighbors.Select(n => dict[n]).Distinct().Count();
                 return nCount > 1;
             });
-
-            foreach(var edge in edges)
-            {
-                var pos = new Vector3Int(edge.x, edge.y, 0);
-                edgeMap.SetTileColor(pos, tile, Color.white);
-            }
+            rlst.AddRange(edges);
         }
+
+        return rlst.Distinct();
     }
-
-    // Update is called once per frame
-    void Update()
-    {
-
-    }
-
-    //IEnumerator OnTimer()
-    //{
-    //    yield return new WaitForSeconds(1);
-
-    //    var stepResults = builderGroup.BuildInStep();
-    //    for(int i=0; i< stepResults.Length; i++)
-    //    {
-    //        foreach(var elem in stepResults[i].elements)
-    //        {
-    //            var pos = new Vector3Int(elem.x, elem.y, 0);
-    //            SetTileColor(pos, colors.ElementAt(i));
-    //        }
-    //    }
-
-    //    StartCoroutine(OnTimer());
-    //}
-
-    //private void SetTileColor(Vector3Int pos, Color color)
-    //{
-    //    blockMap.SetTile(pos, tile);
-    //    blockMap.SetTileFlags(pos, TileFlags.None);
-    //    blockMap.SetColor(pos, color);
-    //}
 }

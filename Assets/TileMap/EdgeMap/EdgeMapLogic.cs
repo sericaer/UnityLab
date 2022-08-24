@@ -5,7 +5,7 @@ using System.Linq;
 using UnityEngine;
 using UnityEngine.Tilemaps;
 
-public class EdgeMap : MonoBehaviour
+public class EdgeMapLogic : MonoBehaviour
 {
     public Tilemap blockMap;
     public Tilemap edgeMap;

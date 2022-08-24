@@ -19,21 +19,6 @@ namespace Common.Math.TileMap
         (0, 1)
         };
 
-        internal static IEnumerable<(int x, int y)> GetRing((int x, int y) center, int distance)
-        {
-            var lines = new IEnumerable<(int x, int y)>[]
-            {
-                Enumerable.Range(0, distance+1).Select(x => (distance, x*-1)).ToArray(),
-                Enumerable.Range(0, distance+1).Select(x => (distance*-1, x)),
-                Enumerable.Range(0, distance+1).Select(x => (x, distance*-1)),
-                Enumerable.Range(0, distance+1).Select(x => (x*-1, distance)),
-                Enumerable.Range(0, distance+1).Select(x => (x*-1, (distance-x)*-1)),
-                Enumerable.Range(0, distance+1).Select(x => (x, distance-x)),
-            };
-
-            return lines.SelectMany(x => x).Select(x=> ToOffset(x)).Select(e=>(center.x+e.x, center.y+e.y));
-        }
-
         public static IEnumerable<(int x, int y)> GetNeighbors((int x, int y) pos)
         {
             var axial = ToAxial(pos);
@@ -80,7 +65,22 @@ namespace Common.Math.TileMap
             return (axial.q * v, axial.r * v);
         }
 
-        internal static int GetDistance((int x, int y) target, (int x, int y) origin)
+        internal static IEnumerable<(int x, int y)> GetRing((int x, int y) center, int distance)
+        {
+            var lines = new IEnumerable<(int x, int y)>[]
+            {
+                Enumerable.Range(0, distance+1).Select(x => (distance, x*-1)).ToArray(),
+                Enumerable.Range(0, distance+1).Select(x => (distance*-1, x)),
+                Enumerable.Range(0, distance+1).Select(x => (x, distance*-1)),
+                Enumerable.Range(0, distance+1).Select(x => (x*-1, distance)),
+                Enumerable.Range(0, distance+1).Select(x => (x*-1, (distance-x)*-1)),
+                Enumerable.Range(0, distance+1).Select(x => (x, distance-x)),
+            };
+
+            return lines.SelectMany(x => x).Select(x => ToOffset(x)).Select(e => (center.x + e.x, center.y + e.y));
+        }
+		
+		internal static int GetDistance((int x, int y) target, (int x, int y) origin)
         {
             var axialP1 = ToAxial(target);
             var axialP2 = ToAxial(origin);
@@ -163,7 +163,7 @@ namespace Common.Math.TileMap
             {
                 Builder.isExist = (n) =>
                 {
-                    return builders.Any(x => x.centers.Contains(n));
+                    return builders.Any(x => x.centers.Contains(n) || x.edges.Contains(n));
                 };
 
 
