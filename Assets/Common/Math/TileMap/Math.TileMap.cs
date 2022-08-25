@@ -9,7 +9,7 @@ namespace Common.Math.TileMap
 
         const int def = 1; //ODD_Q -1, EVEN_Q 1
 
-        static (int q, int r)[] directs = new (int q, int r)[]
+        public  static (int q, int r)[] directs = new (int q, int r)[]
         {
         (1, 0),
         (1, -1),
@@ -97,6 +97,15 @@ namespace Common.Math.TileMap
         private static int CalcSValue((int q, int r) axial)
         {
             return 0 - (axial.q + axial.r);
+        }
+
+        internal static (int x, int y) GetNeighbor((int x, int y) offset, int directIndex)
+        {
+            var direct = directs[directIndex];
+
+            var axial = ToAxial(offset);
+            var newAxial = (axial.q + direct.q, axial.r + direct.r);
+            return ToOffset(newAxial);
         }
     }
 

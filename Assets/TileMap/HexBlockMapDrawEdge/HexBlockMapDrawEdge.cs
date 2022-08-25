@@ -22,11 +22,11 @@ public class HexBlockMapDrawEdge : MonoBehaviour
 
         blockMap.SetBlocks(blocks);
         
-        var edges = GenerateEdges(blocks);
+        var edges = GenerateEdges2(blocks).Keys;
         edgeMap.SetEdges(edges);
 
-        var lines = GenerateBorderLines(edges);
-        borderLines.SetLines(lines);
+        //var lines = GenerateBorderLines(edges);
+        //borderLines.SetLines(lines);
     }
 
     private IEnumerable<(Vector3 p1, Vector3 p2)> GenerateBorderLines(IEnumerable<(int x, int y)> edges)
@@ -87,5 +87,57 @@ public class HexBlockMapDrawEdge : MonoBehaviour
         }
 
         return rlst.Distinct();
+    }
+
+    private Dictionary<(int x, int y), int> GenerateEdges2(Block[] blocks)
+    {
+        var dict = new Dictionary<(int x, int y), Block>();
+        foreach (var block in blocks)
+        {
+            foreach (var edge in block.edges.Select(e => Hexagon.ScaleOffset(e, 2)))
+            {
+                if (dict.ContainsKey(edge))
+                {
+                    continue;
+                }
+                dict.Add(edge, block);
+            }
+        }
+
+        var rlst = new Dictionary<(int x, int y), int>();
+        var edgeCenters = blocks.SelectMany(x => x.edges)
+            .Select(x => Hexagon.ScaleOffset(x, 2))
+            .ToHashSet();
+
+        var mirrorDrects = new (int d1, int d2)[]
+        {
+            (2, 5),
+            (0, 3),
+            (1, 4),
+        };
+
+        foreach (var egde in edgeCenters.SelectMany(e=> Hexagon.GetNeighbors(e)).Distinct())
+        {
+            for (int i = 0; i < mirrorDrects.Length; i++)
+            {
+                var mirrorDiect = mirrorDrects[i];
+
+                var neighbor1 = Hexagon.GetNeighbor(egde, mirrorDiect.d1);
+                var neighbor2 = Hexagon.GetNeighbor(egde, mirrorDiect.d2);
+
+                if (!dict.ContainsKey(neighbor1) || !dict.ContainsKey(neighbor2))
+                {
+                    continue;
+                }
+
+                if (dict[neighbor1] != dict[neighbor2])
+                {
+                    rlst.Add(egde, i);
+                    break;
+                }
+            }
+        }
+
+        return rlst;
     }
 }
