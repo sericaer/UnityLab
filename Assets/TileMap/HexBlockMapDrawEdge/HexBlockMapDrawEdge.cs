@@ -22,7 +22,7 @@ public class HexBlockMapDrawEdge : MonoBehaviour
 
         blockMap.SetBlocks(blocks);
         
-        var edges = GenerateEdges2(blocks).Keys;
+        var edges = GenerateEdges2(blocks);
         edgeMap.SetEdges(edges);
 
         //var lines = GenerateBorderLines(edges);
@@ -111,8 +111,8 @@ public class HexBlockMapDrawEdge : MonoBehaviour
 
         var mirrorDrects = new (int d1, int d2)[]
         {
-            (2, 5),
             (0, 3),
+            (2, 5),
             (1, 4),
         };
 

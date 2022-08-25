@@ -1,35 +1,40 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 using UnityEngine.Tilemaps;
 
 public class EdgeMap : MonoBehaviour
 {
     public Tilemap tileMap;
-    public Sprite sprite;
 
-    public Tile tile
+    public Sprite[] egdes;
+
+    private Tile[] _tiles;
+
+    public void SetEdges(Dictionary<(int x, int y), int> egdeIndexs)
     {
-        get
+        foreach (var pair in egdeIndexs)
         {
-            if (_tile == null)
-            {
-                _tile = ScriptableObject.CreateInstance<Tile>();
-                _tile.sprite = sprite;
-            }
+            var pos = new Vector3Int(pair.Key.x, pair.Key.y, 0);
 
-            return _tile;
+            tileMap.SetTileColor(pos, GetTile(pair.Value), Color.white) ;
         }
     }
 
-    private Tile _tile;
-
-    public void SetEdges(IEnumerable<(int x, int y)> cellIndexs)
+    private Tile GetTile(int index)
     {
-        foreach (var elem in cellIndexs)
+        if(_tiles == null)
         {
-            var pos = new Vector3Int(elem.x, elem.y, 0);
-            tileMap.SetTileColor(pos, tile, Color.white);
+            _tiles = egdes.Select(x =>
+            {
+                var _tile = ScriptableObject.CreateInstance<Tile>();
+                _tile.sprite = x;
+                return _tile;
+            }).ToArray();
         }
+
+        return _tiles[index];
     }
 
     // Start is called before the first frame update

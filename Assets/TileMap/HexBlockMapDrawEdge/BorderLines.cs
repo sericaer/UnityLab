@@ -10,7 +10,7 @@ public class BorderLines : MonoBehaviour
 
     public void SetLines(IEnumerable<(Vector3 p1, Vector3 p2)> lines)
     {
-        defalutLine.positionCount = 0;
+
 
         var lineList = new List<List<Vector3>>();
 
@@ -23,31 +23,58 @@ public class BorderLines : MonoBehaviour
             var line = new List<Vector3>() { first.Value.p1, first.Value.p2 };
             lineList.Add(line);
 
-            var currNode = rawList.First;
-            while (currNode!= null)
+
+            while(true)
             {
-                var nextNode = currNode.Next;
-                if (currNode.Value.p1 == line.Last())
+                var lastPoint = line.Last();
+                var FindNextNode = FindNextNodeInLine(rawList, lastPoint);
+                if(FindNextNode == null)
                 {
-                    line.Add(currNode.Value.p2);
-                    rawList.Remove(currNode);
+                    break;
                 }
-                else if (currNode.Value.p2 == line.Last())
+
+                rawList.Remove(FindNextNode);
+                if (FindNextNode.Value.p1 == lastPoint)
                 {
-                    line.Add(currNode.Value.p1);
-                    rawList.Remove(currNode);
+                    line.Add(FindNextNode.Value.p2);
                 }
-                currNode = nextNode;
+                if (FindNextNode.Value.p2 == lastPoint)
+                {
+                    line.Add(FindNextNode.Value.p1);
+                }
             }
+
         }
 
-        var test = lineList.First();
-
-        foreach(var p in test)
+        foreach(var line in lineList)
         {
-            defalutLine.positionCount++;
-            defalutLine.SetPosition(defalutLine.positionCount - 1, p);
+            var newLine = Instantiate<LineRenderer>(defalutLine, defalutLine.transform.parent);
+            newLine.positionCount = 0;
+
+            foreach (var pos in line)
+            {
+                newLine.positionCount++;
+                newLine.SetPosition(newLine.positionCount - 1, pos);
+            }
+ 
         }
+    }
+
+    private static LinkedListNode<(Vector3 p1, Vector3 p2)> FindNextNodeInLine(LinkedList<(Vector3 p1, Vector3 p2)> rawList, Vector3 last)
+    {
+        var currNode = rawList.First;
+        while (currNode != null)
+        {
+            if (currNode.Value.p1 == last || currNode.Value.p2 == last)
+            {
+                break;
+            }
+
+            var nextNode = currNode.Next;
+            currNode = nextNode;
+        }
+
+        return currNode;
     }
 
     // Start is called before the first frame update

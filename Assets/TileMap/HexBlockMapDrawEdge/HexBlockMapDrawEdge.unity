@@ -286,7 +286,7 @@ LineRenderer:
   - {x: 0, y: 0, z: 0}
   m_Parameters:
     serializedVersion: 3
-    widthMultiplier: 1
+    widthMultiplier: 0.08
     widthCurve:
       serializedVersion: 2
       m_Curve:
@@ -751,4 +751,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   tileMap: {fileID: 1909382338}
-  sprite: {fileID: 2747690628134850419, guid: 1f44f04e4fa44e24b8423b53618bb9f3, type: 3}
+  egdes:
+  - {fileID: 21300000, guid: a55826dbd713eae419b12bce56242417, type: 3}
+  - {fileID: 21300000, guid: ed0906d47cb588e45926369d63ce56fd, type: 3}
+  - {fileID: 21300000, guid: 2951d4a97022ce74ca303f80e005c301, type: 3}
