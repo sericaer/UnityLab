@@ -36,7 +36,7 @@ public class BlockMap : MonoBehaviour
 
         for (int i = 0; i < blocks.Length; i++)
         {
-            foreach (var elem in blocks[i].elements)
+            foreach (var elem in blocks[i].edges)
             {
                 var pos = new Vector3Int(elem.x, elem.y, 0);
                 tileMap.SetTileColor(pos, tile, colors.ElementAt(i));
