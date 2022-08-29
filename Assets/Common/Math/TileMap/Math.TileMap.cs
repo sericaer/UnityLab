@@ -77,7 +77,7 @@ namespace Common.Math.TileMap
                 Enumerable.Range(0, distance+1).Select(x => (x, distance-x)),
             };
 
-            return lines.SelectMany(x => x).Select(x => ToOffset(x)).Select(e => (center.x + e.x, center.y + e.y));
+            return lines.SelectMany(x => x).Select(x => ToOffset(x)).Select(e => (center.x + e.x, center.y + e.y)).Distinct();
         }
 		
 		internal static int GetDistance((int x, int y) target, (int x, int y) origin)

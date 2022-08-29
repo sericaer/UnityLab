@@ -13,97 +13,112 @@ internal class TerrainBuilder1
     {
         var rslt = new Dictionary<(int x, int y), TerrainType>();
 
-        var waterBlock = blocks.Where(x => x.edges.Any(r => r.y == mapSize - 1 || r.x == 0));
-        foreach (var element in waterBlock.SelectMany(x=>x.elements))
+        foreach(var pair in BuildHeightMap(blocks, mapSize))
         {
-            rslt.Add(element, TerrainType.Water);
-        }
-
-        blocks = blocks.Except(waterBlock).ToArray();
-
-        foreach (var elem in blocks.SelectMany(x=>x.elements))
-        {
-            var dist = elem.y;
-            var distPercent = dist * 100 / mapSize;
-
-            var random = Random.Range(0, 100);
-            if (random > distPercent)
+            if(pair.Value < 0)
             {
-                rslt.Add(elem, TerrainType.Hill);
+                rslt.Add(pair.Key, TerrainType.Water);
+            }
+            else if(pair.Value < 0.3)
+            {
+                rslt.Add(pair.Key, TerrainType.Plain);
+            }
+            else if (pair.Value < 0.6)
+            {
+                rslt.Add(pair.Key, TerrainType.Hill);
             }
             else
             {
-                rslt.Add(elem, TerrainType.Plain);
+                rslt.Add(pair.Key, TerrainType.Mount);
             }
         }
-
-        //blocks = blocks.Except(waterBlock).ToArray();
-        //var pointGroups = FindThreeBlockVexters(blocks);
-
-        //foreach(var point in pointGroups)
-        //{
-        //    var distance = point.y;
-        //    var distancePercent =  distance * 100 / mapSize;
-        //    if(distancePercent < 25)
-        //    {
-        //        rslt.Add(point, TerrainType.Mount);
-        //    }
-        //    else
-        //    {
-        //        var random = Random.Range(0, 100);
-        //        if (random < distancePercent)
-        //        {
-        //            rslt.Add(point, TerrainType.Hill);
-        //        }
-        //        else
-        //        {
-        //            rslt.Add(point, TerrainType.Plain);
-        //        }
-        //    }
-        //}
-
-        //foreach(var elem in blocks.SelectMany(x=>x.edges))
-        //{
-        //    if(rslt.ContainsKey(elem))
-        //    {
-        //        continue;
-        //    }
-
-        //    var distance = elem.y;
-        //    var distancePercent = distance * 100 / mapSize;
-
-
-        //    var random = Random.Range(0, 100);
-        //    if (random < distancePercent)
-        //    {
-        //        rslt.Add(elem, TerrainType.Hill);
-        //    }
-        //    else
-        //    {
-        //        rslt.Add(elem, TerrainType.Mount);
-        //    }
-        //}
 
         return rslt;
     }
 
-    private IEnumerable<(int x, int y)> FindThreeBlockVexters(Block[] blocks)
-    {
-        var rslt = new List<(int x, int y)>();
 
-        foreach (var edge in blocks.SelectMany(x=>x.edges))
+    internal Dictionary<(int x, int y), float> BuildHeightMap(Block[] blocks, int mapSize)
+    {
+        var rslt = new Dictionary<(int x, int y), float>();
+
+        var waterBlock = blocks.Where(x => x.edges.Any(r => r.y == mapSize - 1 || r.x == 0));
+        foreach (var element in waterBlock.SelectMany(x => x.elements))
         {
-            var neighborCount = Hexagon.GetNeighbors(edge)
-                .Select(n => blocks.SingleOrDefault(x => x.edges.Contains(n)))
-                .Where(n=> n != null)
-                .Distinct()
-                .Count();
-            if(neighborCount >= 3)
-            {
-                rslt.Add(edge);
-            }
+            rslt.Add(element, -1);
+        }
+
+        blocks = blocks.Except(waterBlock).ToArray();
+
+        var heightMapCores = BuildHeightMapCore(blocks, mapSize);
+        foreach (var pair in heightMapCores)
+        {
+            rslt.Add(pair.Key, pair.Value);
+        }
+
+        var emptyIndexs = blocks.SelectMany(x => x.elements).Except(heightMapCores.Keys);
+        foreach (var elem in emptyIndexs)
+        {
+            //var distFactor = CalcHeighFactorByDistance(elem.y, mapSize);
+            var neighorFactor = CalcHeighFactorByNeighor(elem, heightMapCores);
+
+            rslt.Add(elem, neighorFactor);
         }
 
         return rslt;
+    }
+
+    private float CalcHeighFactorByNeighor((int x, int y) curr, Dictionary<(int x, int y), float> heightMapCores)
+    {
+        Dictionary<(int x, int y), int> neighors = new Dictionary<(int x, int y), int>();
+
+        int distance = 0;
+        while(neighors.Count < 6 || distance < 10)
+        {
+            foreach(var elem in Hexagon.GetRing(curr, distance).Where(x => heightMapCores.ContainsKey(x)))
+            {
+                neighors.Add(elem, distance);
+            }
+
+            distance++;
+        }
+
+        var sum = neighors.Sum(pair =>
+        {
+            var height = heightMapCores[pair.Key];
+            return (10 - pair.Value) / 10.0f * height * Random.Range(1f, 2f);
+        });
+
+        return sum / neighors.Count();
+    }
+
+    private Dictionary<(int x, int y), float> BuildHeightMapCore(IEnumerable<Block> blocks, int mapSize)
+    {
+        var rslt = new Dictionary<(int x, int y), float>();
+
+        var mapCoreIndexs = blocks.Select(b =>
+        {
+            return b.edges.Where(e => b.edges.Contains(Hexagon.GetNeighbor(e, 0)) || b.edges.Contains(Hexagon.GetNeighbor(e, 1)));
+        }).SelectMany(x => x);
+
+        
+
+        foreach (var core in mapCoreIndexs)
+        {
+            var hegih = CalcHeighFactorByDistance(core.y, mapSize);
+
+            rslt.Add(core, hegih);
+        }
+
+        return rslt;
+    }
+
+    private float CalcHeighFactorByDistance(int curr, int max)
+    {
+        var dist = max - curr;
+        var distPercent = dist * 1.0f / max;
+
+        var random = Random.Range(distPercent * distPercent, 1.5f);
+
+        return random * distPercent;
     }
 }

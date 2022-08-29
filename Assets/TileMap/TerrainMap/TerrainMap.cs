@@ -45,7 +45,7 @@ public class TerrainMap : MonoBehaviour
         var blocks = builderGroup.Build().ToArray();
         //blockMap.SetBlocks(blocks);
 
-        var terrainBuilder = new TerrainBuilder1();
+        var terrainBuilder = new TerrainBuilder2();
         var terrainDict = terrainBuilder.Build(blocks, mapSize);
 
         foreach (var pair in terrainDict)
