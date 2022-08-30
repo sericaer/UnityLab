@@ -45,17 +45,122 @@ internal class TerrainBuilder2
 
     private Dictionary<(int x, int y), TerrainType> GenrateWater(IEnumerable<Block> blocks)
     {
-        return new Dictionary<(int x, int y), TerrainType>();
+        var rslt = new Dictionary<(int x, int y), TerrainType>();
+
+        foreach (var elem in blocks.SelectMany(x=>x.elements))
+        {
+            rslt.Add(elem, TerrainType.Water);
+        }
+
+        return rslt;
     }
 
     private Dictionary<(int x, int y), TerrainType> GenratePlain(IEnumerable<Block> blocks)
     {
-        return new Dictionary<(int x, int y), TerrainType>();
+        var rslt = new Dictionary<(int x, int y), TerrainType>();
+
+        var elements = blocks.SelectMany(x => x.elements).OrderBy(_ => System.Guid.NewGuid()).ToList();
+        var edges = blocks.SelectMany(x => x.edges).ToHashSet();
+
+        while (elements.Count > rslt.Count * 10)
+        {
+            var seeds = elements.Take(30).ToArray();
+            foreach (var seed in seeds)
+            {
+                rslt.Add(seed, TerrainType.Hill);
+                elements.Remove(seed);
+            }
+
+            foreach (var selected in rslt.Keys.ToArray())
+            {
+                var neighbors = Hexagon.GetNeighbors(selected).Where(x => !edges.Contains(x));
+                var vailds = neighbors.Intersect(elements).ToArray();
+                if (vailds.Length == 0)
+                {
+                    continue;
+                }
+
+                var index = Random.Range(0, vailds.Length);
+                rslt.Add(vailds[index], TerrainType.Hill);
+                elements.Remove(vailds[index]);
+            }
+        }
+
+        foreach (var elem in elements)
+        {
+            rslt.Add(elem, TerrainType.Plain);
+        }
+
+        return rslt;
     }
 
     private Dictionary<(int x, int y), TerrainType> GenrateHill(IEnumerable<Block> blocks)
     {
-        return new Dictionary<(int x, int y), TerrainType>();
+        var rslt = new Dictionary<(int x, int y), TerrainType>();
+
+        var elements = blocks.SelectMany(x => x.elements).OrderBy(_ => System.Guid.NewGuid()).ToList();
+        var edges = blocks.SelectMany(x => x.edges).ToHashSet();
+
+        while (elements.Count > rslt.Count * 10)
+        {
+            var seeds = elements.Take(100).ToArray();
+            foreach (var seed in seeds)
+            {
+                rslt.Add(seed, TerrainType.Plain);
+                elements.Remove(seed);
+            }
+
+            foreach (var selected in rslt.Keys.ToArray())
+            {
+                var neighbors = Hexagon.GetNeighbors(selected).Where(x => !edges.Contains(x));
+                var vailds = neighbors.Intersect(elements).ToArray();
+                if (vailds.Length == 0)
+                {
+                    continue;
+                }
+
+                var index = Random.Range(0, vailds.Length);
+                rslt.Add(vailds[index], TerrainType.Plain);
+                elements.Remove(vailds[index]);
+            }
+        }
+
+        var mounts = new List<(int x, int y)>();
+        while (elements.Count > mounts.Count * 10)
+        {
+            var seeds = elements.Take(10).ToArray();
+            foreach (var seed in seeds)
+            {
+                mounts.Add(seed);
+                elements.Remove(seed);
+            }
+
+            foreach (var selected in mounts.ToArray())
+            {
+                var neighbors = Hexagon.GetNeighbors(selected);
+                var vailds = neighbors.Intersect(elements).ToArray();
+                if (vailds.Length == 0)
+                {
+                    continue;
+                }
+
+                var index = Random.Range(0, vailds.Length);
+                mounts.Add(vailds[index]);
+                elements.Remove(vailds[index]);
+            }
+        }
+
+        foreach (var mount in mounts)
+        {
+            rslt.Add(mount, TerrainType.Mount);
+        }
+
+        foreach (var elem in elements)
+        {
+            rslt.Add(elem, TerrainType.Hill);
+        }
+
+        return rslt;
     }
 
     private Dictionary<(int x, int y), TerrainType> GenrateMount(IEnumerable<Block> blocks)
@@ -64,7 +169,7 @@ internal class TerrainBuilder2
         var edges = blocks.SelectMany(x => x.edges).ToHashSet();
 
         var rslt = new Dictionary<(int x, int y), TerrainType>();
-        while(elements.Count > rslt.Count * 4)
+        while(elements.Count > rslt.Count * 3)
         {
             var seeds = elements.Take(20).ToArray();
             foreach(var seed in seeds)
@@ -88,6 +193,34 @@ internal class TerrainBuilder2
             }
         }
 
+        var plains = new List<(int x, int y)>();
+        while (rslt.Count > plains.Count * 4)
+        {
+            var seeds = rslt.Keys.Take(20).ToArray();
+            foreach (var seed in seeds)
+            {
+                plains.Add(seed);
+            }
+
+            foreach (var selected in plains.ToArray())
+            {
+                var neighbors = Hexagon.GetNeighbors(selected);
+                var vailds = neighbors.Intersect(rslt.Keys).ToArray();
+                if (vailds.Length == 0)
+                {
+                    continue;
+                }
+
+                var index = Random.Range(0, vailds.Length);
+                plains.Add(vailds[index]);
+            }
+        }
+
+        foreach (var plain in plains)
+        {
+            rslt[plain] = TerrainType.Plain;
+        }
+
         foreach (var elem in elements)
         {
             rslt.Add(elem, TerrainType.Mount);
@@ -100,23 +233,33 @@ internal class TerrainBuilder2
     {
         var rslt = new Dictionary<TerrainType, IEnumerable<Block>>();
 
-        rslt.Add(TerrainType.Water, blocks.Where(x => x.edges.Any(r => r.y == mapSize - 1 || r.x == 0)));
+        var waters = blocks.Where(x => x.edges.Any(r => r.y == mapSize - 1 || r.x == 0));
 
-        blocks = blocks.Except(rslt.Values.SelectMany(x => x)).ToArray();
+        blocks = blocks.Except(waters).ToArray();
 
-        rslt.Add(TerrainType.Mount, blocks.Where(x => x.edges.Any(r => r.y == 0)));
+        var mounts = blocks.Where(x => x.edges.Any(r => r.y == 0));
 
-        blocks = blocks.Except(rslt.Values.SelectMany(x => x)).ToArray();
+        blocks = blocks.Except(mounts).ToArray();
 
         var hills = new List<Block>();
         var plains = new List<Block>();
+        var mountPlus = new List<Block>();
+
         foreach (var block in blocks)
         {
-            if (rslt[TerrainType.Mount].Any(m => block.isNeighbor(m)))
+            if (mounts.Any(m => block.isNeighbor(m)))
             {
-                hills.Add(block);
+                if(Random.Range(0,3) < 1)
+                {
+                    hills.Add(block);
+                }
+                else
+                {
+                    mountPlus.Add(block);
+                }
             }
-            else if (rslt[TerrainType.Water].Any(m => block.isNeighbor(m)))
+
+            else if (waters.Any(m => block.isNeighbor(m)))
             {
                 plains.Add(block);
             }
@@ -148,6 +291,8 @@ internal class TerrainBuilder2
 
         rslt.Add(TerrainType.Hill, hills);
         rslt.Add(TerrainType.Plain, plains);
+        rslt.Add(TerrainType.Water, waters);
+        rslt.Add(TerrainType.Mount, mounts.Union(mountPlus));
 
         return rslt;
     }
