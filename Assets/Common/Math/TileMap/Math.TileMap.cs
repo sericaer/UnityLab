@@ -35,6 +35,11 @@ namespace Common.Math.TileMap
             return Array.IndexOf(directs, direct);
         }
 
+        internal static IEnumerable<(int x, int y)> GetBall((int, int) center, int radius)
+        {
+            throw new NotImplementedException();
+        }
+
         internal static (int x, int y) ScaleOffset((int x, int y) offset, int v)
         {
             var axial = ToAxial(offset);
